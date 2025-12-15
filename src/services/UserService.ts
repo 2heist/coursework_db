@@ -55,6 +55,9 @@ export class UserService {
       orderBy: { user_id: 'asc' }
     })
     console.log(`[INFO] Total users found: ${users.length}`)
-    users.forEach(u => console.log(` - ID: ${u.user_id} | Name: ${u.name} | Email: ${u.email}`))
+    
+    users.forEach(u => {
+      console.log(` - ID: ${u.user_id} | Name: ${u.name} | Phone: ${u.phone_number} | Email: ${u.email} | License: ${u.driver_license_number}`)
+    })
   }
 }
