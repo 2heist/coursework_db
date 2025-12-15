@@ -13,3 +13,112 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  user_id               Int      @id @default(autoincrement())
+  name                  String
+  email                 String   @unique
+  phone_number          String
+  driver_license_number String   @unique
+  
+  rental                Rental[]
+  review                Review[]
+}
+
+model CarModel {
+  model_id   Int    @id @default(autoincrement())
+  brand      String
+  model_name String
+  
+  car        Car[]
+}
+
+model CarStatus {
+  status_id   Int    @id @default(autoincrement())
+  status_name String @unique
+  
+  car         Car[]
+}
+
+model CarLocation {
+  location_id Int    @id @default(autoincrement())
+  city        String
+  address     String
+
+  car         Car[]  
+}
+
+model Car {
+  car_id         Int       @id @default(autoincrement())
+  license_plate  String    @unique
+  year           Int
+  price_per_hour Decimal   @db.Decimal(10, 2)
+  deleted_at     DateTime? 
+
+  // FK
+  model_id       Int
+  status_id      Int
+  location_id    Int
+
+  model          CarModel    @relation(fields: [model_id], references: [model_id])
+  status         CarStatus   @relation(fields: [status_id], references: [status_id])
+  location       CarLocation @relation(fields: [location_id], references: [location_id])
+  
+  rental         Rental[]
+  maintenance    MaintenanceLog[]
+  review         Review[]
+}
+
+model Rental {
+  rent_id           Int       @id @default(autoincrement())
+  start_time        DateTime  @default(now())
+  end_time          DateTime?
+  total_cost        Decimal?  @db.Decimal(10, 2)
+  status            String    
+
+  // FK
+  user_id           Int
+  car_id            Int
+ 
+  user           User        @relation(fields: [user_id], references: [user_id])
+  car            Car         @relation(fields: [car_id], references: [car_id])
+  
+  payment        Payment?
+}
+
+model Payment {
+  payment_id     Int      @id @default(autoincrement())
+  amount         Decimal  @db.Decimal(10, 2)
+  payment_method String
+  status         String
+  payment_date   DateTime @default(now())
+
+  // FK
+  rent_id        Int      @unique
+  rental         Rental   @relation(fields: [rent_id], references: [rent_id])
+}
+
+model MaintenanceLog {
+  log_id      Int      @id @default(autoincrement())
+  description String
+  cost        Decimal  @db.Decimal(10, 2)
+  log_date    DateTime @default(now())
+
+  // FK
+  car_id      Int
+  car         Car      @relation(fields: [car_id], references: [car_id])
+}
+
+model Review {
+  review_id   Int      @id @default(autoincrement())
+  rating      Int
+  comment     String?
+  review_date DateTime @default(now())
+
+  // FK
+  user_id     Int
+  car_id      Int
+
+  user        User     @relation(fields: [user_id], references: [user_id])
+  car         Car      @relation(fields: [car_id], references: [car_id])
+}
