@@ -124,7 +124,11 @@ export class CarService {
     console.log(`[INFO] Updating car ID: ${carId}...`)
 
     try {
-      const car = await prisma.car.findUnique({ where: { car_id: carId } })
+      const car = await prisma.car.findUnique({ 
+        where: { car_id: carId },
+        include: { status: true }
+      })
+      
       if (!car) {
         console.error(`[ERROR] Car not found.`)
         return null
@@ -132,59 +136,56 @@ export class CarService {
 
       const updateData: any = {}
 
+      if (data.statusName) {
+        const currentStatus = car.status.status_name
+        const newStatus = data.statusName
+
+        if (newStatus === 'Rented') {
+          console.error(`[WARNING] Operation Blocked: Cannot manually set status to 'Rented'. Please use the 'Rent a Car' menu.`)
+          return null
+        }
+
+        if (currentStatus === 'Rented') {
+          console.error(`[WARNING] Operation Blocked: This car is currently Rented by a user. Please finish the rental first.`)
+          return null
+        }
+ 
+        const statusRecord = await prisma.carStatus.findUnique({
+          where: { status_name: newStatus }
+        })
+
+        if (statusRecord) {
+          updateData.status_id = statusRecord.status_id
+        } else {
+          console.log(`[WARN] Status '${newStatus}' not found.`)
+        }
+      }
+
       if (data.year) updateData.year = data.year
       if (data.pricePerHour) updateData.price_per_hour = new Prisma.Decimal(data.pricePerHour)
       if (data.licensePlate) updateData.license_plate = data.licensePlate
 
-      if (data.statusName) {
-        const statusRecord = await prisma.carStatus.findUnique({
-          where: { status_name: data.statusName }
-        })
-        if (statusRecord) {
-          updateData.status_id = statusRecord.status_id
-        } else {
-          console.log(`[WARN] Status '${data.statusName}' not found.`)
-        }
-      }
-
+  
       if (data.brand || data.modelName) {
-        const currentModel = await prisma.carModel.findUnique({ where: { model_id: car.model_id } })
-        
-        const targetBrand = data.brand || currentModel?.brand
-        const targetModelName = data.modelName || currentModel?.model_name
-
-        if (targetBrand && targetModelName) {
-          let modelRecord = await prisma.carModel.findFirst({
-            where: { brand: targetBrand, model_name: targetModelName }
-          })
-          
-          if (!modelRecord) {
-            modelRecord = await prisma.carModel.create({
-              data: { brand: targetBrand, model_name: targetModelName }
-            })
-          }
-          updateData.model_id = modelRecord.model_id
-        }
+         const currentModel = await prisma.carModel.findUnique({ where: { model_id: car.model_id } })
+         const targetBrand = data.brand || currentModel?.brand
+         const targetModelName = data.modelName || currentModel?.model_name
+         if (targetBrand && targetModelName) {
+            let modelRecord = await prisma.carModel.findFirst({ where: { brand: targetBrand, model_name: targetModelName } })
+            if (!modelRecord) modelRecord = await prisma.carModel.create({ data: { brand: targetBrand, model_name: targetModelName } })
+            updateData.model_id = modelRecord.model_id
+         }
       }
 
       if (data.city || data.address) {
-        const currentLocation = await prisma.carLocation.findUnique({ where: { location_id: car.location_id } })
-        
-        const targetCity = data.city || currentLocation?.city
-        const targetAddress = data.address || currentLocation?.address
-
-        if (targetCity && targetAddress) {
-          let locationRecord = await prisma.carLocation.findFirst({
-            where: { city: targetCity, address: targetAddress }
-          })
-
-          if (!locationRecord) {
-            locationRecord = await prisma.carLocation.create({
-              data: { city: targetCity, address: targetAddress }
-            })
-          }
-          updateData.location_id = locationRecord.location_id
-        }
+         const currentLocation = await prisma.carLocation.findUnique({ where: { location_id: car.location_id } })
+         const targetCity = data.city || currentLocation?.city
+         const targetAddress = data.address || currentLocation?.address
+         if (targetCity && targetAddress) {
+            let locRecord = await prisma.carLocation.findFirst({ where: { city: targetCity, address: targetAddress } })
+            if (!locRecord) locRecord = await prisma.carLocation.create({ data: { city: targetCity, address: targetAddress } })
+            updateData.location_id = locRecord.location_id
+         }
       }
 
       const updatedCar = await prisma.car.update({
@@ -192,7 +193,7 @@ export class CarService {
         data: updateData
       })
 
-      console.log(`[SUCCESS] Car ${carId} fully updated.`)
+      console.log(`[SUCCESS] Car ${carId} updated.`)
       return updatedCar
 
     } catch (error) {
