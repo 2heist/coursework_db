@@ -87,6 +87,25 @@ export class UserService {
     }
   }
 
+  async deleteUser(userId: number): Promise<boolean> {
+    console.log(`[INFO] Deleting user ID: ${userId}...`)
+    try {
+      const user = await prisma.user.findUnique({ where: { user_id: userId } })
+      if (!user) {
+        console.error(`[ERROR] User with ID ${userId} not found.`)
+        return false
+      }
+
+      await prisma.user.delete({ where: { user_id: userId } })
+      console.log(`[SUCCESS] User ${userId} deleted.`)
+      return true
+
+    } catch (error) {
+      console.error("[CRITICAL ERROR] Delete failed:", error)
+      return false
+    }
+  }
+
   async getAllUsers() {
     const users = await prisma.user.findMany({
       orderBy: { user_id: 'asc' }

@@ -15,9 +15,10 @@ async function main() {
     console.log("\n1. Show all users")
     console.log("2. Create new user")
     console.log("3. Update user info")
-    console.log("4. Exit")
+    console.log("4. Delete user")
+    console.log("5. Exit")
 
-    const answer = await ask("Select action (1-4): ")
+    const answer = await ask("Select action (1-5): ")
 
     switch (answer.trim()) {
       case '1':
@@ -30,6 +31,9 @@ async function main() {
         await userController.update()
         break
       case '4':
+        await userController.delete()
+        break
+      case '5':
         console.log("Exiting...")
         rl.close()
         await prisma.$disconnect()

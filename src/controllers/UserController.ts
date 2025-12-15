@@ -63,4 +63,24 @@ export class UserController {
       license: newLicense || undefined
     })
   }
+
+  async delete() {
+    console.log("\nDelete User")
+    const idStr = await ask("Enter User ID to DELETE: ")
+    if (idStr.toLowerCase() === 'cancel') return
+
+    const id = parseInt(idStr)
+    if (isNaN(id)) {
+      console.log("[ERROR] Invalid ID format.")
+      return
+    }
+
+    const confirm = await ask(`Are you sure you want to delete user ${id}? (yes/no): `)
+    if (confirm.toLowerCase() !== 'yes') {
+      console.log("Operation cancelled.")
+      return
+    }
+
+    await userService.deleteUser(id)
+  }
 }
