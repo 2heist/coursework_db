@@ -3,43 +3,41 @@ dotenv.config()
 
 import { PrismaClient } from './generated/prisma/client'
 import { UserController } from './controllers/UserController'
+import { CarController } from './controllers/CarController'
 import { ask, rl } from './utils/input'
 
 const prisma = new PrismaClient()
 const userController = new UserController()
+const carController = new CarController()
 
 async function main() {
-  console.log("\nCarSharing CLI")
+  console.log("\nCarSharing")
 
   while (true) {
-    console.log("\n1. Show all users")
-    console.log("2. Create new user")
-    console.log("3. Update user info")
-    console.log("4. Delete user")
-    console.log("5. Exit")
+    console.log("\nMAIN MENU")
+    console.log("1. Manage Users (Clients)")
+    console.log("2. Manage Cars (Fleet)")
+    console.log("3. Exit")
 
-    const answer = await ask("Select action (1-5): ")
+    const answer = await ask("Select module (1-3): ")
 
     switch (answer.trim()) {
       case '1':
-        await userController.showAll()
+        await userController.handleMenu()
         break
+        
       case '2':
-        await userController.register()
+        await carController.handleMenu()
         break
+        
       case '3':
-        await userController.update()
-        break
-      case '4':
-        await userController.delete()
-        break
-      case '5':
-        console.log("Exiting...")
+        console.log("Shutting down...")
         rl.close()
         await prisma.$disconnect()
         return
+        
       default:
-        console.log("Unknown command.")
+        console.log("Invalid option.")
     }
   }
 }

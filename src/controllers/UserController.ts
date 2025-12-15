@@ -5,12 +5,44 @@ const userService = new UserService()
 
 export class UserController {
   
+  async handleMenu() {
+    while (true) {
+      console.log("\n--- USER MANAGEMENT ---")
+      console.log("1. List Users")
+      console.log("2. Create User")
+      console.log("3. Update User")
+      console.log("4. Delete User")
+      console.log("5. Back to Main Menu")
+
+      const answer = await ask("Select action (1-5): ")
+
+      switch (answer.trim()) {
+        case '1':
+          await this.showAll()
+          break
+        case '2':
+          await this.register()
+          break
+        case '3':
+          await this.update()
+          break
+        case '4':
+          await this.delete()
+          break
+        case '5':
+          return 
+        default:
+          console.log("Unknown command.")
+      }
+    }
+  }
+
   async showAll() {
     await userService.getAllUsers()
   }
 
   async register() {
-    console.log("\nRegister New User (Type 'cancel' to go back)")
+    console.log("\n--- Register New User (Type 'cancel' to go back) ---")
     
     const name = await ask("Name: ")
     if (name.toLowerCase() === 'cancel') return 
@@ -33,7 +65,7 @@ export class UserController {
   }
 
   async update() {
-    console.log("\nUpdate User (Type 'cancel' to go back, Enter to skip field)")
+    console.log("\n--- Update User (Type 'cancel' to go back, Enter to skip field) ---")
     
     const idStr = await ask("Enter User ID to update: ")
     if (idStr.toLowerCase() === 'cancel') return
@@ -65,7 +97,7 @@ export class UserController {
   }
 
   async delete() {
-    console.log("\nDelete User")
+    console.log("\n--- Delete User ---")
     const idStr = await ask("Enter User ID to DELETE: ")
     if (idStr.toLowerCase() === 'cancel') return
 
