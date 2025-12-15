@@ -9,6 +9,13 @@ interface CreateUserDTO {
   license: string
 }
 
+interface UpdateUserDTO {
+  name?: string
+  email?: string
+  phone?: string
+  license?: string
+}
+
 export class UserService {
   
   async createUser(data: CreateUserDTO): Promise<User | null> {
@@ -46,6 +53,36 @@ export class UserService {
 
     } catch (error) {
       console.error("[CRITICAL ERROR] Database issue:", error)
+      return null
+    }
+  }
+
+  async updateUser(userId: number, data: UpdateUserDTO): Promise<User | null> {
+    console.log(`[INFO] Updating user ID: ${userId}...`)
+
+    try {
+      const user = await prisma.user.findUnique({ where: { user_id: userId } })
+      
+      if (!user) {
+        console.error(`[ERROR] User with ID ${userId} not found.`)
+        return null
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { user_id: userId },
+        data: {
+          name: data.name || undefined,
+          email: data.email || undefined,
+          phone_number: data.phone || undefined,
+          driver_license_number: data.license || undefined
+        }
+      })
+
+      console.log(`[SUCCESS] User ${userId} updated.`)
+      return updatedUser
+
+    } catch (error) {
+      console.error("[CRITICAL ERROR] Update failed:", error)
       return null
     }
   }
