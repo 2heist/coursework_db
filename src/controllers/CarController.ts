@@ -7,15 +7,16 @@ export class CarController {
 
   async handleMenu() {
     while (true) {
-      console.log("\nCAR MANAGEMENT")
-      console.log("1. Show Active Cars")
+      console.log("\n--- CAR MANAGEMENT ---")
+      console.log("1. Show All Active Cars")
       console.log("2. Add New Car")
       console.log("3. Update Car Details")
       console.log("4. Delete Car (Soft)")
       console.log("5. Trash Bin (Restore)")
-      console.log("6. Back to Main Menu")
+      console.log("6. Search Cars")
+      console.log("7. Back to Main Menu")
 
-      const answer = await ask("Select action (1-6): ")
+      const answer = await ask("Select action (1-7): ")
 
       switch (answer.trim()) {
         case '1':
@@ -34,12 +35,46 @@ export class CarController {
           await this.trashBin()
           break
         case '6':
+          await this.smartSearch()
+          break
+        case '7':
           return
         default:
           console.log("Unknown command.")
       }
     }
   }
+
+  private async smartSearch() {
+    console.log("\nSMART SEARCH")
+    console.log("Type any keyword (Brand, Model, Plate, City) OR press Enter to see all.")
+    
+    const query = await ask("Search Query: ")
+    let currentPage = 1
+    const pageSize = 3 
+
+    while (true) {
+      const { totalPages } = await carService.searchCars(query, currentPage, pageSize)
+
+      console.log("\n[Navigation]:")
+      if (currentPage < totalPages) console.log(" > type 'n' for Next Page")
+      if (currentPage > 1) console.log(" > type 'p' for Previous Page")
+      console.log(" > type 'x' to Exit search")
+
+      const nav = await ask("Action: ")
+      
+      if (nav.toLowerCase() === 'n' && currentPage < totalPages) {
+        currentPage++
+      } else if (nav.toLowerCase() === 'p' && currentPage > 1) {
+        currentPage--
+      } else if (nav.toLowerCase() === 'x') {
+        break
+      } else {
+        console.log("Invalid navigation command or End of List.")
+      }
+    }
+  }
+
 
   private async create() {
     console.log("\nAdd New Car")

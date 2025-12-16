@@ -58,7 +58,7 @@ export class RentalController {
     await rentalService.getActiveRentals()
 
     const rentIdStr = await ask("Enter Rental ID to finish: ")
-    if (rentIdStr === 'cancel') return
+    if (rentIdStr.toLowerCase() === 'cancel') return
     const rentId = parseInt(rentIdStr)
 
     if (isNaN(rentId)) {
@@ -66,6 +66,12 @@ export class RentalController {
       return
     }
 
-    await rentalService.returnCar(rentId)
+    console.log("Payment Methods: 1. Card, 2. Cash")
+    const methodChoice = await ask("Select Payment Method (1-2): ")
+    
+    let method = 'Card' 
+    if (methodChoice === '2') method = 'Cash'
+
+    await rentalService.returnCar(rentId, method)
   }
 }

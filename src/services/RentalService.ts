@@ -3,7 +3,7 @@ import { PrismaClient, Rental, Prisma } from '../generated/prisma/client'
 const prisma = new PrismaClient()
 
 export class RentalService {
-
+  
   async rentCar(userId: number, carId: number): Promise<Rental | null> {
     console.log(`[INFO] Processing rental request: User ${userId} -> Car ${carId}...`)
 
@@ -15,32 +15,27 @@ export class RentalService {
       }
 
       const availableStatus = await prisma.carStatus.findUnique({ where: { status_name: 'Available' } })
-      if (!availableStatus) {
-        console.error("[ERROR] Status 'Available' not defined in DB.")
-        return null
-      }
+      if (!availableStatus) return null
 
       const car = await prisma.car.findFirst({
         where: { 
           car_id: carId, 
-          status_id: availableStatus.status_id, 
+          status_id: availableStatus.status_id,
           deleted_at: null 
         }
       })
 
       if (!car) {
-        console.error(`[ERROR] Car ${carId} is not available (or does not exist).`)
+        console.error(`[ERROR] Car ${carId} is not available.`)
         return null
       }
 
       let rentedStatus = await prisma.carStatus.findUnique({ where: { status_name: 'Rented' } })
       if (!rentedStatus) {
-
         rentedStatus = await prisma.carStatus.create({ data: { status_name: 'Rented' } })
       }
 
       const result = await prisma.$transaction(async (tx) => {
-        
         const newRental = await tx.rental.create({
           data: {
             user_id: userId,
@@ -67,14 +62,13 @@ export class RentalService {
     }
   }
 
-  async returnCar(rentId: number): Promise<Rental | null> {
+  async returnCar(rentId: number, paymentMethod: string): Promise<Rental | null> {
     console.log(`[INFO] Processing return for Rental ID: ${rentId}...`)
 
     try {
-      
       const rental = await prisma.rental.findUnique({
         where: { rent_id: rentId },
-        include: { car: true } 
+        include: { car: true }
       })
 
       if (!rental || rental.status !== 'Active') {
@@ -84,11 +78,11 @@ export class RentalService {
 
       const endTime = new Date()
       const startTime = new Date(rental.start_time)
-      
-    
       const diffMs = endTime.getTime() - startTime.getTime()
-      const diffHours = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60)))
-     
+      
+      let diffHours = Math.ceil(diffMs / (1000 * 60 * 60))
+      if (diffHours < 1) diffHours = 1
+
       const pricePerHour = Number(rental.car.price_per_hour)
       const totalCost = new Prisma.Decimal(diffHours * pricePerHour)
 
@@ -112,10 +106,20 @@ export class RentalService {
           data: { status_id: availableStatus!.status_id }
         })
 
+        await tx.payment.create({
+          data: {
+            rent_id: rentId,
+            amount: totalCost,
+            payment_method: paymentMethod, 
+            status: 'Completed',
+            payment_date: new Date()
+          }
+        })
+
         return updatedRental
       })
 
-      console.log(`[SUCCESS] Car returned. Total cost saved.`)
+      console.log(`[SUCCESS] Car returned. Payment recorded via ${paymentMethod}.`)
       return result
 
     } catch (error) {
@@ -129,13 +133,13 @@ export class RentalService {
       where: { status: 'Active' },
       include: {
         user: true,
-        car: { include: { model: true, location: true } }
+        car: { include: { model: true } }
       }
     })
 
     console.log(`[INFO] Active rentals: ${rentals.length}`)
     rentals.forEach(r => {
-      console.log(` - RentID: ${r.rent_id} | User: ${r.user.name} | Car: ${r.car.model.brand} ${r.car.model.model_name} | Started: ${r.start_time.toLocaleString()}`)
+      console.log(` - RentID: ${r.rent_id} | ${r.user.name} -> ${r.car.model.brand} | Started: ${r.start_time.toLocaleString()}`)
     })
   }
 }

@@ -120,6 +120,52 @@ export class CarService {
     })
   }
 
+  async searchCars(query: string, page: number = 1, pageSize: number = 3) {
+    console.log(`[INFO] Searching for "${query}" (Page ${page})...`)
+
+    const skip = (page - 1) * pageSize
+
+    const whereCondition: Prisma.CarWhereInput = {
+      deleted_at: null,
+      OR: query ? [
+        { license_plate: { contains: query, mode: 'insensitive' } },
+        { model: { brand: { contains: query, mode: 'insensitive' } } }, 
+        { model: { model_name: { contains: query, mode: 'insensitive' } } }, 
+        { location: { city: { contains: query, mode: 'insensitive' } } }, 
+        { location: { address: { contains: query, mode: 'insensitive' } } }
+      ] : undefined 
+    }
+
+    try {
+
+      const cars = await prisma.car.findMany({
+        where: whereCondition,
+        take: pageSize, 
+        skip: skip,     
+        include: { model: true, status: true, location: true },
+        orderBy: { car_id: 'asc' }
+      })
+
+      const totalCount = await prisma.car.count({ where: whereCondition })
+      const totalPages = Math.ceil(totalCount / pageSize)
+
+      console.log(`[INFO] Found ${totalCount} cars. Showing page ${page} of ${totalPages}.`)
+      
+      if (cars.length > 0) {
+        console.log(`\nSEARCH RESULTS (Page ${page}/${totalPages}):`)
+        this.printCarList(cars)
+      } else {
+        console.log("\n[INFO] No cars found matching your criteria.")
+      }
+
+      return { cars, totalCount, totalPages }
+
+    } catch (error) {
+      console.error("[ERROR] Search failed:", error)
+      return { cars: [], totalCount: 0, totalPages: 0 }
+    }
+  }
+
   async updateCar(carId: number, data: UpdateCarDTO): Promise<Car | null> {
     console.log(`[INFO] Updating car ID: ${carId}...`)
 
