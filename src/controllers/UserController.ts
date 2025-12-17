@@ -42,7 +42,7 @@ export class UserController {
   }
 
   async register() {
-    console.log("\n--- Register New User (Type 'cancel' to go back) ---")
+    console.log("\nRegister New User (Type 'cancel' to go back)")
     
     const name = await ask("Name: ")
     if (name.toLowerCase() === 'cancel') return 
@@ -65,7 +65,7 @@ export class UserController {
   }
 
   async update() {
-    console.log("\n--- Update User (Type 'cancel' to go back, Enter to skip field) ---")
+    console.log("\nUpdate User (Type 'cancel' to go back, Enter to skip field)")
     
     const idStr = await ask("Enter User ID to update: ")
     if (idStr.toLowerCase() === 'cancel') return
@@ -97,7 +97,7 @@ export class UserController {
   }
 
   async delete() {
-    console.log("\n--- Delete User ---")
+    console.log("\nDelete User")
     const idStr = await ask("Enter User ID to DELETE: ")
     if (idStr.toLowerCase() === 'cancel') return
 
