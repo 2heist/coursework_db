@@ -100,7 +100,7 @@ CREATE TABLE "User" (
   "user_id" SERIAL PRIMARY KEY,
   "name" TEXT NOT NULL,
   "email" TEXT NOT NULL UNIQUE,
-  "phone_number" TEXT NOT NULL,
+  "phone_number" TEXT NOT NULL UNIQUE,
   "driver_license_number" TEXT NOT NULL UNIQUE
 );
 ```
